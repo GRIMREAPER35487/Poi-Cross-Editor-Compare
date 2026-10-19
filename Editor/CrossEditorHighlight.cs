@@ -78,8 +78,6 @@ namespace Synthos.PoiCrossEditorCompare
 
         public static bool IsHighlighting(EditorWindow window) => Pairs.ContainsKey(window);
 
-        internal static int PairCount => Pairs.Count / 2;
-
         public static void Start(EditorWindow a, EditorWindow b)
         {
             Stop(a); Stop(b);
@@ -120,7 +118,6 @@ namespace Synthos.PoiCrossEditorCompare
             {
                 if (_lastError != e.Message) Debug.LogException(e);
                 _lastError = e.Message;
-                CrossEditorAlign.Note("tick failed: " + e);
             }
         }
 
@@ -143,7 +140,7 @@ namespace Synthos.PoiCrossEditorCompare
                 if (!done.Add(a) || !done.Add(b)) continue;
                 var viewA = a.rootVisualElement.Q<ScrollView>();
                 var viewB = b.rootVisualElement.Q<ScrollView>();
-                if (viewA == null || viewB == null) { CrossEditorAlign.Note($"no scroll view: A={viewA != null} B={viewB != null}"); continue; }
+                if (viewA == null || viewB == null) continue;
 
                 var diff = Diffs[a];
                 var materialsA = PoiCrossEditorButtons.GetTargets(a);

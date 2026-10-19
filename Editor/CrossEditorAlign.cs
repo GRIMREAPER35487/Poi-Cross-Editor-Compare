@@ -52,7 +52,6 @@ namespace Synthos.PoiCrossEditorCompare
             double now = EditorApplication.timeSinceStartup;
             bool changedA = Changed(a, viewA.contentContainer, now), changedB = Changed(b, viewB.contentContainer, now);
             if (!changedA && !changedB && !MirrorFrom.Contains(a) && !MirrorFrom.Contains(b)) return;
-            Log("pass running");
             try
             {
                 SyncExpansion(a, b, viewA.contentContainer, viewB.contentContainer);
@@ -63,41 +62,12 @@ namespace Synthos.PoiCrossEditorCompare
                 // Log once per kind of failure rather than every frame.
                 if (_lastError != e.Message) Debug.LogException(e);
                 _lastError = e.Message;
-                Log("pass failed: " + e);
             }
             Measured[a] = (viewA.contentContainer, viewA.contentContainer.layout.size, now);
             Measured[b] = (viewB.contentContainer, viewB.contentContainer.layout.size, now);
         }
 
         static string _lastError;
-
-        // ---- Diagnostics ----
-
-        static System.Text.StringBuilder _log;
-
-        [MenuItem("Poi/Thry/Debug Cross Editor Alignment")]
-        static void DebugNextPass()
-        {
-            _log = new System.Text.StringBuilder();
-            _log.AppendLine("[Poi Cross Editor Compare] Alignment pass");
-            Log($"paired windows: {CrossEditorHighlight.PairCount}");
-            Measured.Clear();
-        }
-
-        // Also written to <project>/Temp/SynthosAlignDebug.txt, so it can be read without the Console.
-        static readonly string LogPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "Temp", "SynthosAlignDebug.txt"));
-
-        static void Log(string line)
-        {
-            if (_log == null) return;
-            _log.AppendLine(line);
-            try { System.IO.File.WriteAllText(LogPath, _log.ToString()); } catch (System.IO.IOException) { }
-        }
-
-        internal static void Note(string line) => Log(line);
-
-        static string Describe(VisualElement e) =>
-            e == null ? "null" : $"{e.GetType().Name} name='{e.name}' classes=[{string.Join(",", e.GetClasses())}]";
 
         // Written as !(x <= y) so a size that was NaN (not laid out yet) counts as changed.
         static bool Changed(EditorWindow window, VisualElement content, double now) =>
@@ -170,9 +140,6 @@ namespace Synthos.PoiCrossEditorCompare
             var spacersA = VisibleSpacers(contentA);
             var spacersB = VisibleSpacers(contentB);
             float topA = contentA.worldBound.yMin, topB = contentB.worldBound.yMin;
-            Log($"content A: {Describe(contentA)} top={topA} size={contentA.layout.size} rows={rowsA.Count} spacers={spacersA.Count}");
-            Log($"content B: {Describe(contentB)} top={topB} size={contentB.layout.size} rows={rowsB.Count} spacers={spacersB.Count}");
-            int logged = 0;
 
             var existingA = Existing(contentA);
             var existingB = Existing(contentB);
@@ -187,11 +154,6 @@ namespace Synthos.PoiCrossEditorCompare
                 float yA = Unpadded(elementA, spacersA) - topA + addedA;
                 float yB = Unpadded(elementB, spacersB) - topB + addedB;
                 float gap = yB - yA;
-                if (_log != null && logged++ < 12)
-                {
-                    var at = gap > 0 ? StackedAncestor(elementA, contentA) : StackedAncestor(elementB, contentB);
-                    Log($"match {key}: yA={yA:0.#} yB={yB:0.#} gap={gap:0.#} pad-at={Describe(at)} parent={Describe(at.hierarchy.parent)} parentDir={at.hierarchy.parent?.resolvedStyle.flexDirection}");
-                }
                 var anchorA = StackedAncestor(elementA, contentA);
                 var anchorB = StackedAncestor(elementB, contentB);
                 // Positive: a spacer above A's row; negative: above B's. Whole pixels, and the current
@@ -201,18 +163,8 @@ namespace Synthos.PoiCrossEditorCompare
                 if (pad > 0) { Want(wanted, anchorA, pad); addedA += pad; }
                 else if (pad < 0) { Want(wanted, anchorB, -pad); addedB -= pad; }
             }
-            Log($"wanted spacers: {wanted.Count}");
             ApplySpacers(contentA, wanted);
             ApplySpacers(contentB, wanted);
-            if (_log != null)
-            {
-                foreach (var spacer in contentA.Query(name: SpacerName).ToList().Concat(contentB.Query(name: SpacerName).ToList()))
-                    Log($"spacer in {Describe(spacer.hierarchy.parent)} height style={spacer.style.height.value.value} resolved={spacer.resolvedStyle.height} display={spacer.resolvedStyle.display}");
-                Log($"first rows A: {string.Join(" | ", rowsA.Take(5).Select(r => r.key))}");
-                Log($"first rows B: {string.Join(" | ", rowsB.Take(5).Select(r => r.key))}");
-                Debug.Log(_log.ToString());
-                _log = null;
-            }
         }
 
         // The element each spacer sits above, and the height we gave it.

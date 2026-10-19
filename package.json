@@ -1,7 +1,7 @@
 {
   "name": "com.synthos.poi-cross-editor-compare",
   "displayName": "Synthos Poi Cross Editor Compare",
-  "version": "0.1.0-preview.1",
+  "version": "1.0.0",
   "unity": "2022.3",
   "description": "Extends Poiyomi's Thry Cross Shader Editor: grab an avatar's materials in one click, open several editors, and compare two material sets side by side with differences highlighted, sections mirrored and scrolling synced.",
   "author": {
